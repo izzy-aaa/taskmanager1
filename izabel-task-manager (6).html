@@ -1,0 +1,2194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Izabel - Task Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        body {
+            height: 100vh;
+            overflow: hidden;
+            background: #fafafa;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            height: 56px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            border-bottom: 1px solid #e0e0e0;
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #f06a6a;
+            letter-spacing: -0.5px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sync-status:hover {
+            background: #e0e0e0;
+        }
+
+        .sync-status.syncing {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .sync-status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .sync-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .search-bar {
+            padding: 8px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            font-size: 14px;
+            width: 240px;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .search-bar:focus {
+            border-color: #f06a6a;
+            box-shadow: 0 0 0 3px rgba(240, 106, 106, 0.1);
+        }
+
+        /* Main Container */
+        .main-container {
+            display: flex;
+            height: calc(100vh - 56px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: #1a1a1a;
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .sidebar-group {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-group-header {
+            padding: 0 20px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .sidebar-group-header:hover .group-title {
+            color: #aaa;
+        }
+
+        .group-toggle {
+            width: 16px;
+            height: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            transition: transform 0.2s;
+        }
+
+        .group-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .group-title {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            flex: 1;
+            margin-left: 4px;
+        }
+
+        .group-actions {
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .sidebar-group-header:hover .group-actions {
+            opacity: 1;
+        }
+
+        .group-action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 16px;
+            cursor: pointer;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .group-action-btn:hover {
+            background: #2a2a2a;
+            color: #f06a6a;
+        }
+
+        .add-group-btn {
+            margin: 0 20px 20px;
+            padding: 8px 12px;
+            background: none;
+            border: 1px dashed #444;
+            border-radius: 6px;
+            color: #666;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: calc(100% - 40px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .add-group-btn:hover {
+            background: #2a2a2a;
+            border-color: #f06a6a;
+            color: #f06a6a;
+        }
+
+        .project-list {
+            list-style: none;
+            padding: 0 8px;
+        }
+
+        .project-item {
+            padding: 6px 12px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            border-radius: 4px;
+            margin-bottom: 2px;
+        }
+
+        .project-item:hover {
+            background: #2a2a2a;
+        }
+
+        .project-item.active {
+            background: #2a2a2a;
+            border-left: 3px solid #f06a6a;
+            padding-left: 9px;
+        }
+
+        .project-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        .project-name {
+            color: #ddd;
+            font-size: 13px;
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .project-count {
+            color: #666;
+            font-size: 11px;
+            margin-left: auto;
+            margin-right: 8px;
+        }
+
+        .project-actions {
+            display: none;
+            gap: 4px;
+            position: absolute;
+            right: 8px;
+        }
+
+        .project-item:hover .project-count {
+            display: none;
+        }
+
+        .project-item:hover .project-actions {
+            display: flex;
+        }
+
+        .project-action-btn {
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 3px;
+            transition: all 0.2s;
+            font-size: 12px;
+            line-height: 1;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .project-action-btn:hover {
+            background: #333;
+            color: white;
+        }
+
+        .project-action-btn.delete:hover {
+            background: #500;
+            color: #faa;
+        }
+
+        /* Content Area */
+        .content-area {
+            flex: 1;
+            background: white;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            padding: 16px 24px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fafafa;
+        }
+
+        .toolbar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .add-task-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #f06a6a;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-task-btn:hover {
+            background: #e05555;
+            transform: translateY(-1px);
+        }
+
+        /* Task List */
+        .task-container {
+            padding: 20px 24px;
+        }
+
+        .task-section {
+            margin-bottom: 32px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-toggle {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            transition: transform 0.2s;
+        }
+
+        .section-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            margin-left: 8px;
+            flex: 1;
+        }
+
+        .section-count {
+            color: #999;
+            font-size: 12px;
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .task-list {
+            list-style: none;
+            margin-left: 28px;
+        }
+
+        .task-item {
+            display: grid;
+            grid-template-columns: 24px 1fr auto;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: white;
+            border: none;
+            border-bottom: 1px solid #f0f0f0;
+            margin-bottom: 0;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .task-item:first-child {
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .task-item:hover {
+            background: #fafafa;
+        }
+
+        .task-item.completed {
+            opacity: 0.5;
+        }
+
+        .task-checkbox {
+            width: 18px;
+            height: 18px;
+            border: 1.5px solid #d0d0d0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            position: relative;
+            background: white;
+        }
+
+        .task-item:hover .task-checkbox {
+            border-color: #999;
+        }
+
+        .task-item.completed .task-checkbox {
+            background: #4caf50;
+            border-color: #4caf50;
+        }
+
+        .task-item.completed .task-checkbox::after {
+            content: '';
+            position: absolute;
+            width: 5px;
+            height: 9px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin-bottom: 2px;
+        }
+
+        .task-text {
+            color: #333;
+            font-size: 14px;
+        }
+
+        .task-due-date {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: #f8f8f8;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .task-due-date svg {
+            flex-shrink: 0;
+        }
+
+        .task-due-date.overdue {
+            background: #fee;
+            color: #c00;
+        }
+
+        .task-due-date.today {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .add-task-inline {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            margin-left: 28px;
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: text;
+            transition: all 0.2s;
+        }
+
+        .add-task-inline svg {
+            color: #999;
+            flex-shrink: 0;
+        }
+
+        .add-task-inline:hover {
+            background: #fafafa;
+        }
+
+        .add-task-inline.active {
+            background: white;
+            border-bottom: 1px solid #f06a6a;
+        }
+
+        .add-task-text {
+            color: #999;
+            font-size: 14px;
+        }
+
+        .add-task-input-inline {
+            flex: 1;
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+        }
+
+        .add-task-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .add-task-save, .add-task-cancel {
+            padding: 4px 12px;
+            border-radius: 4px;
+            border: none;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .add-task-save {
+            background: #f06a6a;
+            color: white;
+        }
+
+        .add-task-save:hover {
+            background: #e05555;
+        }
+
+        .add-task-cancel {
+            background: #e0e0e0;
+            color: #666;
+        }
+
+        .add-task-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        .add-section-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: none;
+            border: 1px dashed #ddd;
+            border-radius: 6px;
+            color: #999;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            width: fit-content;
+            margin-left: 28px;
+        }
+
+        .add-section-btn:hover {
+            background: #f8f8f8;
+            border-color: #f06a6a;
+            color: #f06a6a;
+        }
+
+        /* Task Detail Pane */
+        .task-detail-pane {
+            position: fixed;
+            right: -400px;
+            top: 56px;
+            width: 400px;
+            height: calc(100vh - 56px);
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .task-detail-pane.open {
+            right: 0;
+        }
+
+        .task-detail-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .task-detail-close {
+            background: none;
+            border: none;
+            color: #999;
+            cursor: pointer;
+            padding: 4px;
+            transition: color 0.2s;
+        }
+
+        .task-detail-close:hover {
+            color: #333;
+        }
+
+        .task-detail-body {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .task-detail-title {
+            width: 100%;
+            font-size: 18px;
+            font-weight: 500;
+            border: none;
+            outline: none;
+            padding: 8px 0;
+            margin-bottom: 20px;
+        }
+
+        .task-detail-title:focus {
+            border-bottom: 2px solid #f06a6a;
+        }
+
+        .task-detail-section {
+            margin-bottom: 24px;
+        }
+
+        .task-detail-label {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .task-detail-description {
+            width: 100%;
+            min-height: 100px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            resize: vertical;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .task-detail-description:focus {
+            border-color: #f06a6a;
+        }
+
+        .task-detail-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .task-detail-input {
+            padding: 8px 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .task-detail-input:focus {
+            border-color: #f06a6a;
+        }
+
+        .task-detail-delete {
+            background: none;
+            border: 1px solid #e0e0e0;
+            color: #c00;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .task-detail-delete:hover {
+            background: #fee;
+            border-color: #c00;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.3;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.2s;
+        }
+
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 480px;
+            width: 90%;
+            animation: slideUp 0.3s;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 8px;
+            outline: none;
+        }
+
+        .modal-input:focus {
+            border-color: #f06a6a;
+            box-shadow: 0 0 0 3px rgba(240, 106, 106, 0.1);
+        }
+
+        .modal-select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 16px;
+            outline: none;
+            background: white;
+            cursor: pointer;
+        }
+
+        .modal-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .modal-btn-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .modal-btn-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .modal-btn-primary {
+            background: #f06a6a;
+            color: white;
+        }
+
+        .modal-btn-primary:hover {
+            background: #e05555;
+        }
+
+        /* Custom Confirmation Dialog */
+        .confirm-dialog {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.2s;
+        }
+
+        .confirm-dialog.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .confirm-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 400px;
+            width: 90%;
+            animation: slideUp 0.3s;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .confirm-message {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 24px;
+        }
+
+        .confirm-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .confirm-btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .confirm-cancel {
+            background: #f0f0f0;
+            color: #666;
+        }
+
+        .confirm-cancel:hover {
+            background: #e0e0e0;
+        }
+
+        .confirm-delete {
+            background: #dc3545;
+            color: white;
+        }
+
+        .confirm-delete:hover {
+            background: #c82333;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #ddd;
+            border-radius: 4px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">Izabel</div>
+        </div>
+        <div class="header-right">
+            <div class="sync-status">
+                <span class="sync-dot"></span>
+                <span>Local storage</span>
+            </div>
+            <input type="text" class="search-bar" placeholder="Search..." id="searchBar">
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div id="sidebarGroups">
+                <!-- Groups will be rendered here -->
+            </div>
+            <button class="add-group-btn" onclick="showAddGroupModal()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Group
+            </button>
+        </div>
+
+        <div class="content-area">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <button class="add-task-btn" onclick="showAddTaskModal()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Add task</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="task-container" id="taskContainer">
+                <!-- Tasks will be rendered here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Group Modal -->
+    <div class="modal" id="groupModal">
+        <div class="modal-content">
+            <div class="modal-title" id="groupModalTitle">Add Group</div>
+            <input type="text" class="modal-input" id="groupNameInput" placeholder="Group name (e.g., Work, Personal, Notes)">
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeGroupModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="groupModalSave" onclick="saveGroup()">Add Group</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Project Modal -->
+    <div class="modal" id="projectModal">
+        <div class="modal-content">
+            <div class="modal-title" id="projectModalTitle">Add Project</div>
+            <input type="text" class="modal-input" id="projectNameInput" placeholder="Project name">
+            <label class="modal-label">Group</label>
+            <select class="modal-select" id="projectGroupSelect">
+                <!-- Groups will be populated here -->
+            </select>
+            <label class="modal-label">Color</label>
+            <div class="color-picker" id="colorPicker">
+                <!-- Color options will be added here -->
+            </div>
+            <div class="color-input-group">
+                <input type="text" class="color-hex-input" id="colorHexInput" placeholder="#FF6B6B" maxlength="7">
+                <div class="color-preview" id="colorPreview"></div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeProjectModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="projectModalSave" onclick="saveProject()">Add Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Section Modal -->
+    <div class="modal" id="sectionModal">
+        <div class="modal-content">
+            <div class="modal-title">Add Section</div>
+            <input type="text" class="modal-input" id="sectionNameInput" placeholder="Section name">
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeSectionModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" onclick="addSection()">Add Section</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div class="modal" id="taskModal">
+        <div class="modal-content">
+            <div class="modal-title" id="taskModalTitle">Add Task</div>
+            <input type="text" class="modal-input" id="taskNameInput" placeholder="Task name">
+            <div class="modal-row">
+                <div>
+                    <label class="modal-label">Section</label>
+                    <select class="modal-input" id="taskSectionSelect">
+                        <option value="">No section</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="modal-label">Due Date</label>
+                    <input type="date" class="modal-input" id="taskDueDateInput">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeTaskModal()">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="taskModalSave">Add Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Task Detail Pane -->
+    <div class="task-detail-pane" id="taskDetailPane">
+        <div class="task-detail-header">
+            <h3>Task Details</h3>
+            <button class="task-detail-close" onclick="closeTaskDetail()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        <div class="task-detail-body">
+            <input type="text" class="task-detail-title" id="taskDetailTitle" placeholder="Task name">
+            
+            <div class="task-detail-section">
+                <div class="task-detail-label">Description</div>
+                <textarea class="task-detail-description" id="taskDetailDescription" placeholder="Add a description..."></textarea>
+            </div>
+            
+            <div class="task-detail-section">
+                <div class="task-detail-row">
+                    <div>
+                        <div class="task-detail-label">Due Date</div>
+                        <input type="date" class="task-detail-input" id="taskDetailDueDate">
+                    </div>
+                    <div>
+                        <div class="task-detail-label">Section</div>
+                        <select class="task-detail-input" id="taskDetailSection">
+                            <!-- Sections will be populated here -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="task-detail-section">
+                <button class="task-detail-delete" onclick="deleteCurrentTask()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                    </svg>
+                    Delete Task
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Google Sheets Modal -->
+    <div class="modal" id="sheetsModal">
+        <div class="modal-content" style="max-width: 560px;">
+            <div class="modal-title">Google Sheets Integration</div>
+            
+            <div class="sheets-status" id="sheetsStatus">
+                <div class="status-icon">📊</div>
+                <div class="status-text">Not connected to Google Sheets</div>
+            </div>
+            
+            <div class="sheets-section">
+                <label class="modal-label">Google Sheets URL</label>
+                <input type="text" class="modal-input" id="sheetsUrl" placeholder="https://docs.google.com/spreadsheets/d/your-sheet-id/edit">
+                <small style="color: #666; font-size: 12px;">Paste the URL of your Google Sheets document</small>
+            </div>
+            
+            <div class="sheets-section">
+                <label class="modal-label">Sync Settings</label>
+                <div class="sync-options">
+                    <label class="sync-option">
+                        <input type="checkbox" id="autoSync" checked>
+                        <span>Auto-sync every 5 minutes</span>
+                    </label>
+                    <label class="sync-option">
+                        <input type="checkbox" id="syncCompleted" checked>
+                        <span>Include completed tasks</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="sheets-info">
+                <h4 style="margin-bottom: 8px; color: #333;">Sheet Format</h4>
+                <p style="font-size: 13px; color: #666; margin-bottom: 8px;">Your Google Sheet will be organized with these columns:</p>
+                <div class="sheet-preview">
+                    <div class="sheet-header">
+                        <span>Group</span>
+                        <span>Project</span>
+                        <span>Section</span>
+                        <span>Task</span>
+                        <span>Status</span>
+                        <span>Due Date</span>
+                        <span>Description</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeSheetsModal()">Cancel</button>
+                <button class="modal-btn" style="background: #34a853; color: white;" onclick="connectSheets()">Connect & Sync</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Confirmation Dialog -->
+    <div class="confirm-dialog" id="confirmDialog">
+        <div class="confirm-content">
+            <div class="confirm-message" id="confirmMessage">Are you sure?</div>
+            <div class="confirm-buttons">
+                <button class="confirm-btn confirm-cancel" id="confirmCancel">Cancel</button>
+                <button class="confirm-btn confirm-delete" id="confirmOk">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data structure
+        let groups = [
+            {
+                id: 'g1',
+                name: 'Work',
+                collapsed: false,
+                projects: [
+                    {
+                        id: 'p1',
+                        name: 'Q1 Planning',
+                        color: '#ff6b6b',
+                        sections: [
+                            {
+                                id: 's1',
+                                name: 'To Do',
+                                collapsed: false,
+                                tasks: [
+                                    { id: 't1', text: 'Define OKRs', completed: false, dueDate: '', description: '' },
+                                    { id: 't2', text: 'Schedule team meetings', completed: false, dueDate: '', description: '' }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                id: 'g2',
+                name: 'Personal',
+                collapsed: false,
+                projects: [
+                    {
+                        id: 'p2',
+                        name: 'Home Tasks',
+                        color: '#4ecdc4',
+                        sections: [
+                            {
+                                id: 's2',
+                                name: 'Shopping',
+                                collapsed: false,
+                                tasks: [
+                                    { id: 't3', text: 'Buy groceries', completed: false, dueDate: '', description: '' },
+                                    { id: 't4', text: 'Order new furniture', completed: false, dueDate: '', description: '' }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        let currentProjectId = 'p1';
+        let currentEditingTask = null; // Track which task is being edited
+        let editingProject = null; // Track which project is being edited
+        let editingGroup = null; // Track which group is being edited
+        const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ffeaa7', '#fd79a8', '#a29bfe', '#6c5ce7'];
+
+        // Custom confirmation dialog
+        let confirmCallback = null;
+
+        function showConfirm(message, callback) {
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmDialog').classList.add('show');
+            confirmCallback = callback;
+        }
+
+        function hideConfirm() {
+            document.getElementById('confirmDialog').classList.remove('show');
+            confirmCallback = null;
+        }
+
+        document.getElementById('confirmCancel').onclick = hideConfirm;
+        document.getElementById('confirmOk').onclick = () => {
+            if (confirmCallback) confirmCallback();
+            hideConfirm();
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+            renderSidebar();
+            renderTasks();
+            
+            document.getElementById('searchBar').addEventListener('input', (e) => {
+                filterTasks(e.target.value);
+            });
+        });
+
+        // Data persistence
+        function saveData() {
+            const data = {
+                groups: groups,
+                currentProjectId: currentProjectId
+            };
+            // Using in-memory storage for the artifact
+            window.appData = data;
+        }
+
+        function loadData() {
+            if (window.appData) {
+                groups = window.appData.groups || groups;
+                currentProjectId = window.appData.currentProjectId || currentProjectId;
+            }
+        }
+
+        // Render sidebar with groups and projects
+        function renderSidebar() {
+            const container = document.getElementById('sidebarGroups');
+            container.innerHTML = '';
+            
+            groups.forEach(group => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'sidebar-group';
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'sidebar-group-header';
+                headerDiv.innerHTML = `
+                    <span class="group-toggle ${group.collapsed ? 'collapsed' : ''}">▼</span>
+                    <span class="group-title">${group.name}</span>
+                    <div class="group-actions">
+                        <button class="group-action-btn" onclick="editGroup('${group.id}', event)" title="Edit group">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button class="group-action-btn" onclick="showAddProjectModal('${group.id}')" title="Add project">+</button>
+                        <button class="group-action-btn" onclick="deleteGroup('${group.id}', event)" title="Delete group">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+                headerDiv.onclick = (e) => {
+                    if (!e.target.closest('.group-action-btn')) {
+                        toggleGroup(group.id);
+                    }
+                };
+                groupDiv.appendChild(headerDiv);
+                
+                if (!group.collapsed) {
+                    const projectList = document.createElement('ul');
+                    projectList.className = 'project-list';
+                    
+                    group.projects.forEach(project => {
+                        const taskCount = project.sections.reduce((sum, section) => 
+                            sum + section.tasks.length, 0);
+                        
+                        const li = document.createElement('li');
+                        li.className = 'project-item';
+                        if (project.id === currentProjectId) {
+                            li.classList.add('active');
+                        }
+                        
+                        li.innerHTML = `
+                            <span class="project-dot" style="background: ${project.color}"></span>
+                            <span class="project-name">${project.name}</span>
+                            <span class="project-count">${taskCount}</span>
+                            <div class="project-actions">
+                                <button class="project-action-btn" onclick="editProject('${group.id}', '${project.id}', event)" title="Edit">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                </button>
+                                <button class="project-action-btn delete" onclick="deleteProject('${group.id}', '${project.id}', event)" title="Delete">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        `;
+                        
+                        li.onclick = (e) => {
+                            if (!e.target.closest('.project-action-btn')) {
+                                selectProject(project.id);
+                            }
+                        };
+                        
+                        projectList.appendChild(li);
+                    });
+                    
+                    groupDiv.appendChild(projectList);
+                }
+                
+                container.appendChild(groupDiv);
+            });
+        }
+
+        function toggleGroup(groupId) {
+            const group = groups.find(g => g.id === groupId);
+            group.collapsed = !group.collapsed;
+            saveData();
+            renderSidebar();
+        }
+
+        function selectProject(projectId) {
+            currentProjectId = projectId;
+            saveData();
+            renderSidebar();
+            renderTasks();
+        }
+
+        function getCurrentProject() {
+            for (const group of groups) {
+                const project = group.projects.find(p => p.id === currentProjectId);
+                if (project) return project;
+            }
+            return null;
+        }
+
+        // Group management
+        function showAddGroupModal() {
+            editingGroup = null;
+            document.getElementById('groupModal').classList.add('show');
+            document.getElementById('groupModalTitle').textContent = 'Add Group';
+            document.getElementById('groupModalSave').textContent = 'Add Group';
+            document.getElementById('groupNameInput').value = '';
+            document.getElementById('groupNameInput').focus();
+        }
+
+        function editGroup(groupId, event) {
+            event.stopPropagation();
+            const group = groups.find(g => g.id === groupId);
+            
+            editingGroup = groupId;
+            document.getElementById('groupModal').classList.add('show');
+            document.getElementById('groupModalTitle').textContent = 'Edit Group';
+            document.getElementById('groupModalSave').textContent = 'Save Changes';
+            document.getElementById('groupNameInput').value = group.name;
+            document.getElementById('groupNameInput').focus();
+            document.getElementById('groupNameInput').select();
+        }
+
+        function closeGroupModal() {
+            document.getElementById('groupModal').classList.remove('show');
+            editingGroup = null;
+        }
+
+        function saveGroup() {
+            const name = document.getElementById('groupNameInput').value.trim();
+            if (!name) return;
+            
+            if (editingGroup) {
+                // Edit existing group
+                const group = groups.find(g => g.id === editingGroup);
+                group.name = name;
+            } else {
+                // Add new group
+                const newGroup = {
+                    id: 'g' + Date.now(),
+                    name: name,
+                    collapsed: false,
+                    projects: []
+                };
+                groups.push(newGroup);
+            }
+            
+            saveData();
+            renderSidebar();
+            closeGroupModal();
+        }
+
+        function addGroup() {
+            // This function is kept for backward compatibility
+            saveGroup();
+        }
+
+        function deleteGroup(groupId, event) {
+            event.stopPropagation();
+            
+            const group = groups.find(g => g.id === groupId);
+            const projectCount = group.projects.length;
+            const taskCount = group.projects.reduce((total, project) => 
+                total + project.sections.reduce((sum, section) => 
+                    sum + section.tasks.length, 0), 0);
+            
+            let message = `Delete group "${group.name}"?`;
+            if (projectCount > 0) {
+                message = `Delete group "${group.name}" with ${projectCount} project(s) and ${taskCount} task(s)?`;
+            }
+            
+            showConfirm(message, () => {
+                // Check if we're deleting the group that contains the current project
+                const currentProjectInGroup = group.projects.some(p => p.id === currentProjectId);
+                
+                // Remove the group
+                groups = groups.filter(g => g.id !== groupId);
+                
+                // If the current project was in the deleted group, select a new one
+                if (currentProjectInGroup) {
+                    currentProjectId = null;
+                    for (const g of groups) {
+                        if (g.projects.length > 0) {
+                            currentProjectId = g.projects[0].id;
+                            break;
+                        }
+                    }
+                }
+                
+                // If no groups left, create a default one
+                if (groups.length === 0) {
+                    groups.push({
+                        id: 'g' + Date.now(),
+                        name: 'General',
+                        collapsed: false,
+                        projects: []
+                    });
+                }
+                
+                saveData();
+                renderSidebar();
+                renderTasks();
+            });
+        }
+
+        // Project management
+        function showAddProjectModal(groupId) {
+            editingProject = null;
+            const modal = document.getElementById('projectModal');
+            modal.classList.add('show');
+            document.getElementById('projectModalTitle').textContent = 'Add Project';
+            document.getElementById('projectModalSave').textContent = 'Add Project';
+            document.getElementById('projectNameInput').value = '';
+            
+            // Populate group select
+            const select = document.getElementById('projectGroupSelect');
+            select.innerHTML = '';
+            groups.forEach(group => {
+                const option = document.createElement('option');
+                option.value = group.id;
+                option.textContent = group.name;
+                if (group.id === groupId) option.selected = true;
+                select.appendChild(option);
+            });
+            
+            // Setup color picker
+            setupColorPicker(colors[Math.floor(Math.random() * colors.length)]);
+            
+            document.getElementById('projectNameInput').focus();
+        }
+
+        function editProject(groupId, projectId, event) {
+            event.stopPropagation();
+            const group = groups.find(g => g.id === groupId);
+            const project = group.projects.find(p => p.id === projectId);
+            
+            editingProject = { groupId, projectId };
+            
+            const modal = document.getElementById('projectModal');
+            modal.classList.add('show');
+            document.getElementById('projectModalTitle').textContent = 'Edit Project';
+            document.getElementById('projectModalSave').textContent = 'Save Changes';
+            document.getElementById('projectNameInput').value = project.name;
+            
+            // Populate group select
+            const select = document.getElementById('projectGroupSelect');
+            select.innerHTML = '';
+            groups.forEach(g => {
+                const option = document.createElement('option');
+                option.value = g.id;
+                option.textContent = g.name;
+                if (g.id === groupId) option.selected = true;
+                select.appendChild(option);
+            });
+            
+            // Setup color picker with current color
+            setupColorPicker(project.color);
+            
+            document.getElementById('projectNameInput').focus();
+            document.getElementById('projectNameInput').select();
+        }
+
+        function setupColorPicker(selectedColor) {
+            const picker = document.getElementById('colorPicker');
+            const hexInput = document.getElementById('colorHexInput');
+            const preview = document.getElementById('colorPreview');
+            
+            picker.innerHTML = '';
+            picker.dataset.selectedColor = selectedColor;
+            hexInput.value = selectedColor;
+            preview.style.background = selectedColor;
+            
+            // Add preset color options
+            colors.forEach(color => {
+                const colorOption = document.createElement('div');
+                colorOption.className = 'color-option';
+                if (color === selectedColor) {
+                    colorOption.classList.add('selected');
+                }
+                colorOption.style.background = color;
+                colorOption.onclick = () => {
+                    // Remove previous selection
+                    picker.querySelectorAll('.color-option').forEach(opt => 
+                        opt.classList.remove('selected'));
+                    // Add selection to clicked color
+                    colorOption.classList.add('selected');
+                    picker.dataset.selectedColor = color;
+                    hexInput.value = color;
+                    preview.style.background = color;
+                };
+                picker.appendChild(colorOption);
+            });
+            
+            // Handle hex input changes
+            hexInput.oninput = (e) => {
+                let value = e.target.value;
+                
+                // Add # if not present
+                if (value && !value.startsWith('#')) {
+                    value = '#' + value;
+                    hexInput.value = value;
+                }
+                
+                // Validate hex color
+                if (/^#[0-9A-Fa-f]{6}$/.test(value)) {
+                    picker.dataset.selectedColor = value;
+                    preview.style.background = value;
+                    
+                    // Deselect preset colors if custom color is entered
+                    picker.querySelectorAll('.color-option').forEach(opt => {
+                        if (opt.style.background !== value.toLowerCase()) {
+                            opt.classList.remove('selected');
+                        }
+                    });
+                } else if (value.length === 7) {
+                    // If it's 7 characters but not valid, show error indication
+                    preview.style.background = '#ccc';
+                }
+            };
+            
+            // Convert 3-digit hex to 6-digit when field loses focus
+            hexInput.onblur = (e) => {
+                let value = e.target.value;
+                if (/^#[0-9A-Fa-f]{3}$/.test(value)) {
+                    value = '#' + value[1] + value[1] + value[2] + value[2] + value[3] + value[3];
+                    hexInput.value = value;
+                    picker.dataset.selectedColor = value;
+                    preview.style.background = value;
+                }
+            };
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.remove('show');
+            editingProject = null;
+        }
+
+        function saveProject() {
+            const name = document.getElementById('projectNameInput').value.trim();
+            const groupId = document.getElementById('projectGroupSelect').value;
+            const selectedColor = document.getElementById('colorPicker').dataset.selectedColor || 
+                                 document.getElementById('colorHexInput').value;
+            
+            // Validate hex color one more time
+            const finalColor = /^#[0-9A-Fa-f]{6}$/.test(selectedColor) ? selectedColor : colors[0];
+            
+            if (!name) return;
+            
+            if (editingProject) {
+                // Edit existing project
+                const oldGroup = groups.find(g => g.id === editingProject.groupId);
+                const project = oldGroup.projects.find(p => p.id === editingProject.projectId);
+                
+                project.name = name;
+                project.color = finalColor;
+                
+                // If group changed, move the project
+                if (groupId !== editingProject.groupId) {
+                    oldGroup.projects = oldGroup.projects.filter(p => p.id !== editingProject.projectId);
+                    const newGroup = groups.find(g => g.id === groupId);
+                    newGroup.projects.push(project);
+                }
+            } else {
+                // Add new project
+                const group = groups.find(g => g.id === groupId);
+                const newProject = {
+                    id: 'p' + Date.now(),
+                    name: name,
+                    color: finalColor,
+                    sections: []
+                };
+                group.projects.push(newProject);
+                currentProjectId = newProject.id;
+            }
+            
+            saveData();
+            renderSidebar();
+            if (!editingProject || editingProject.projectId === currentProjectId) {
+                renderTasks();
+            }
+            closeProjectModal();
+        }
+
+        function addProject() {
+            // This function is kept for backward compatibility
+            saveProject();
+        }
+
+        function deleteProject(groupId, projectId, event) {
+            event.stopPropagation();
+            showConfirm('Delete this project and all its tasks?', () => {
+                const group = groups.find(g => g.id === groupId);
+                group.projects = group.projects.filter(p => p.id !== projectId);
+                
+                // Select another project if we deleted the current one
+                if (currentProjectId === projectId) {
+                    for (const g of groups) {
+                        if (g.projects.length > 0) {
+                            currentProjectId = g.projects[0].id;
+                            break;
+                        }
+                    }
+                }
+                
+                saveData();
+                renderSidebar();
+                renderTasks();
+            });
+        }
+
+        // Section management
+        function showAddSectionModal() {
+            document.getElementById('sectionModal').classList.add('show');
+            document.getElementById('sectionNameInput').value = '';
+            document.getElementById('sectionNameInput').focus();
+        }
+
+        function closeSectionModal() {
+            document.getElementById('sectionModal').classList.remove('show');
+        }
+
+        function addSection() {
+            const name = document.getElementById('sectionNameInput').value.trim();
+            if (name) {
+                const project = getCurrentProject();
+                if (project) {
+                    const newSection = {
+                        id: 's' + Date.now(),
+                        name: name,
+                        collapsed: false,
+                        tasks: []
+                    };
+                    project.sections.push(newSection);
+                    saveData();
+                    renderTasks();
+                    closeSectionModal();
+                }
+            }
+        }
+
+        function toggleSection(sectionId) {
+            const project = getCurrentProject();
+            const section = project.sections.find(s => s.id === sectionId);
+            section.collapsed = !section.collapsed;
+            saveData();
+            renderTasks();
+        }
+
+        // Task management
+        function renderTasks() {
+            const container = document.getElementById('taskContainer');
+            const project = getCurrentProject();
+            
+            if (!project) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📋</div><p>Select or create a project to get started</p></div>';
+                return;
+            }
+            
+            container.innerHTML = `<h2 style="margin-bottom: 20px; color: #333;">${project.name}</h2>`;
+            
+            // Ensure project has a completed section
+            ensureCompletedSection(project);
+            
+            // Separate completed from active sections
+            const completedSection = project.sections.find(s => s.id === 'completed-' + project.id);
+            const activeSections = project.sections.filter(s => s.id !== 'completed-' + project.id);
+            
+            // Render active sections
+            activeSections.forEach(section => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'task-section';
+                
+                const incompleteTasks = section.tasks.filter(t => !t.completed);
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'section-header';
+                headerDiv.onclick = () => toggleSection(section.id);
+                
+                headerDiv.innerHTML = `
+                    <span class="section-toggle ${section.collapsed ? 'collapsed' : ''}">▼</span>
+                    <span class="section-title">${section.name}</span>
+                    <span class="section-count">${incompleteTasks.length}</span>
+                `;
+                
+                sectionDiv.appendChild(headerDiv);
+                
+                if (!section.collapsed) {
+                    const taskList = document.createElement('ul');
+                    taskList.className = 'task-list';
+                    
+                    incompleteTasks.forEach(task => {
+                        const taskItem = document.createElement('li');
+                        taskItem.className = 'task-item';
+                        
+                        taskItem.innerHTML = `
+                            <div class="task-checkbox" onclick="toggleTask('${section.id}', '${task.id}', event)"></div>
+                            <span class="task-text" onclick="openTaskDetail('${section.id}', '${task.id}', event)">${task.text}</span>
+                            ${task.dueDate ? `<span class="task-due-date">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                ${formatDate(task.dueDate)}
+                            </span>` : ''}
+                        `;
+                        
+                        taskList.appendChild(taskItem);
+                    });
+                    
+                    sectionDiv.appendChild(taskList);
+                    
+                    // Add inline task input
+                    const addTaskDiv = document.createElement('div');
+                    addTaskDiv.className = 'add-task-inline';
+                    addTaskDiv.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span class="add-task-text">Add task</span>
+                    `;
+                    addTaskDiv.onclick = () => showInlineAddTask(section.id, addTaskDiv);
+                    sectionDiv.appendChild(addTaskDiv);
+                }
+                
+                container.appendChild(sectionDiv);
+            });
+            
+            // Add section button
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-section-btn';
+            addBtn.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add section`;
+            addBtn.onclick = showAddSectionModal;
+            container.appendChild(addBtn);
+            
+            // Render completed section at the bottom
+            if (completedSection && completedSection.tasks.length > 0) {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'task-section';
+                sectionDiv.style.marginTop = '32px';
+                
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'section-header';
+                headerDiv.onclick = () => toggleSection(completedSection.id);
+                headerDiv.style.opacity = '0.7';
+                
+                headerDiv.innerHTML = `
+                    <span class="section-toggle ${completedSection.collapsed ? 'collapsed' : ''}">▼</span>
+                    <span class="section-title">Completed</span>
+                    <span class="section-count">${completedSection.tasks.length}</span>
+                `;
+                
+                sectionDiv.appendChild(headerDiv);
+                
+                if (!completedSection.collapsed) {
+                    const taskList = document.createElement('ul');
+                    taskList.className = 'task-list';
+                    
+                    completedSection.tasks.forEach(task => {
+                        const taskItem = document.createElement('li');
+                        taskItem.className = 'task-item completed';
+                        
+                        taskItem.innerHTML = `
+                            <div class="task-checkbox" onclick="toggleTask('${completedSection.id}', '${task.id}', event)"></div>
+                            <span class="task-text" onclick="openTaskDetail('${completedSection.id}', '${task.id}', event)">${task.text}</span>
+                            ${task.dueDate ? `<span class="task-due-date">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                ${formatDate(task.dueDate)}
+                            </span>` : ''}
+                        `;
+                        
+                        taskList.appendChild(taskItem);
+                    });
+                    
+                    sectionDiv.appendChild(taskList);
+                }
+                
+                container.appendChild(sectionDiv);
+            }
+        }
+
+        function ensureCompletedSection(project) {
+            const completedId = 'completed-' + project.id;
+            let completedSection = project.sections.find(s => s.id === completedId);
+            
+            if (!completedSection) {
+                completedSection = {
+                    id: completedId,
+                    name: 'Completed',
+                    collapsed: true,
+                    tasks: []
+                };
+                project.sections.push(completedSection);
+            } else {
+                // Always keep completed section collapsed by default
+                completedSection.collapsed = true;
+            }
+            
+            // Move all completed tasks from other sections to completed section
+            project.sections.forEach(section => {
+                if (section.id !== completedId) {
+                    const completedTasks = section.tasks.filter(t => t.completed);
+                    completedTasks.forEach(task => {
+                        // Remove from current section
+                        section.tasks = section.tasks.filter(t => t.id !== task.id);
+                        // Add to completed section if not already there
+                        if (!completedSection.tasks.find(t => t.id === task.id)) {
+                            completedSection.tasks.push(task);
+                        }
+                    });
+                }
+            });
+        }
+
+        function showInlineAddTask(sectionId, element) {
+            element.classList.add('active');
+            element.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <input type="text" class="add-task-input-inline" id="inline-input-${sectionId}" placeholder="Task name">
+                <div class="add-task-actions">
+                    <button class="add-task-save" onclick="saveInlineTask('${sectionId}')">Add</button>
+                    <button class="add-task-cancel" onclick="renderTasks()">Cancel</button>
+                </div>
+            `;
+            element.onclick = null;
+            
+            const input = document.getElementById(`inline-input-${sectionId}`);
+            input.focus();
+            input.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') saveInlineTask(sectionId);
+                if (e.key === 'Escape') renderTasks();
+            });
+        }
+
+        function saveInlineTask(sectionId) {
+            const input = document.getElementById(`inline-input-${sectionId}`);
+            const text = input.value.trim();
+            
+            if (text) {
+                const project = getCurrentProject();
+                const section = project.sections.find(s => s.id === sectionId);
+                
+                const newTask = {
+                    id: 't' + Date.now(),
+                    text: text,
+                    completed: false,
+                    dueDate: '',
+                    description: '',
+                    originalSectionId: sectionId // Track original section for uncompleting
+                };
+                
+                section.tasks.push(newTask);
+                saveData();
+                renderTasks();
+                renderSidebar(); // Update task count
+            }
+        }
+
+        function toggleTask(sectionId, taskId, event) {
+            event.stopPropagation();
+            const project = getCurrentProject();
+            const completedSectionId = 'completed-' + project.id;
+            
+            // Find the task in either regular sections or completed section
+            let sourceSection = project.sections.find(s => 
+                s.tasks.find(t => t.id === taskId)
+            );
+            let task = sourceSection.tasks.find(t => t.id === taskId);
+            
+            // Toggle the completed status
+            task.completed = !task.completed;
+            
+            if (task.completed) {
+                // Move to completed section
+                sourceSection.tasks = sourceSection.tasks.filter(t => t.id !== taskId);
+                const completedSection = project.sections.find(s => s.id === completedSectionId);
+                completedSection.tasks.push(task);
+            } else {
+                // Move back to original section or first available section
+                const completedSection = project.sections.find(s => s.id === completedSectionId);
+                completedSection.tasks = completedSection.tasks.filter(t => t.id !== taskId);
+                
+                // Try to find the original section, or use the first non-completed section
+                let targetSection = project.sections.find(s => s.id === task.originalSectionId);
+                if (!targetSection || targetSection.id === completedSectionId) {
+                    targetSection = project.sections.find(s => s.id !== completedSectionId);
+                }
+                if (targetSection) {
+                    targetSection.tasks.push(task);
+                }
+            }
+            
+            saveData();
+            renderTasks();
+            renderSidebar(); // Update task counts
+        }
+
+        function showAddTaskModal() {
+            const project = getCurrentProject();
+            if (!project) {
+                // Can't use alert in sandbox, so we'll just return
+                return;
+            }
+            
+            document.getElementById('taskModal').classList.add('show');
+            document.getElementById('taskNameInput').value = '';
+            document.getElementById('taskDueDateInput').value = '';
+            
+            // Populate sections (excluding completed section)
+            const select = document.getElementById('taskSectionSelect');
+            const completedSectionId = 'completed-' + project.id;
+            select.innerHTML = '<option value="">No section</option>';
+            project.sections.forEach(section => {
+                if (section.id !== completedSectionId) {
+                    const option = document.createElement('option');
+                    option.value = section.id;
+                    option.textContent = section.name;
+                    select.appendChild(option);
+                }
+            });
+            
+            // Set up the save button
+            document.getElementById('taskModalSave').onclick = () => {
+                const taskName = document.getElementById('taskNameInput').value.trim();
+                const sectionId = document.getElementById('taskSectionSelect').value;
+                const dueDate = document.getElementById('taskDueDateInput').value;
+                
+                if (taskName) {
+                    const newTask = {
+                        id: 't' + Date.now(),
+                        text: taskName,
+                        completed: false,
+                        dueDate: dueDate,
+                        description: '',
+                        originalSectionId: sectionId || 's' + Date.now()
+                    };
+                    
+                    if (sectionId) {
+                        const section = project.sections.find(s => s.id === sectionId);
+                        section.tasks.push(newTask);
+                    } else {
+                        // If no section selected, add to first section or create one
+                        let firstSection = project.sections.find(s => s.id !== completedSectionId);
+                        if (!firstSection) {
+                            firstSection = {
+                                id: 's' + Date.now(),
+                                name: 'Tasks',
+                                collapsed: false,
+                                tasks: []
+                            };
+                            project.sections.unshift(firstSection);
+                        }
+                        newTask.originalSectionId = firstSection.id;
+                        firstSection.tasks.push(newTask);
+                    }
+                    
+                    saveData();
+                    renderTasks();
+                    renderSidebar();
+                    closeTaskModal();
+                }
+            };
+            
+            document.getElementById('taskNameInput').focus();
+        }
+
+        function closeTaskModal() {
+            document.getElementById('taskModal').classList.remove('show');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const today = new Date();
+            if (date.toDateString() === today.toDateString()) return 'Today';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+
+        // Task detail pane functions
+        function openTaskDetail(sectionId, taskId, event) {
+            event.stopPropagation();
+            const project = getCurrentProject();
+            const section = project.sections.find(s => s.id === sectionId);
+            const task = section.tasks.find(t => t.id === taskId);
+            
+            currentEditingTask = { sectionId, taskId };
+            
+            // Populate task details
+            document.getElementById('taskDetailTitle').value = task.text;
+            document.getElementById('taskDetailDescription').value = task.description || '';
+            document.getElementById('taskDetailDueDate').value = task.dueDate || '';
+            
+            // Populate section dropdown
+            const sectionSelect = document.getElementById('taskDetailSection');
+            sectionSelect.innerHTML = '';
+            project.sections.forEach(s => {
+                const option = document.createElement('option');
+                option.value = s.id;
+                option.textContent = s.name;
+                if (s.id === sectionId) option.selected = true;
+                sectionSelect.appendChild(option);
+            });
+            
+            // Open the pane
+            document.getElementById('taskDetailPane').classList.add('open');
+            
+            // Add event listeners for auto-save
+            document.getElementById('taskDetailTitle').onblur = saveTaskDetails;
+            document.getElementById('taskDetailDescription').onblur = saveTaskDetails;
+            document.getElementById('taskDetailDueDate').onchange = saveTaskDetails;
+            document.getElementById('taskDetailSection').onchange = moveTaskToSection;
+        }
+
+        function closeTaskDetail() {
+            document.getElementById('taskDetailPane').classList.remove('open');
+            currentEditingTask = null;
+        }
+
+        function saveTaskDetails() {
+            if (!currentEditingTask) return;
+            
+            const project = getCurrentProject();
+            const section = project.sections.find(s => s.id === currentEditingTask.sectionId);
+            const task = section.tasks.find(t => t.id === currentEditingTask.taskId);
+            
+            task.text = document.getElementById('taskDetailTitle').value;
+            task.description = document.getElementById('taskDetailDescription').value;
+            task.dueDate = document.getElementById('taskDetailDueDate').value;
+            
+            saveData();
+            renderTasks();
+            renderSidebar(); // Update task count if needed
+        }
+
+        function moveTaskToSection() {
+            if (!currentEditingTask) return;
+            
+            const project = getCurrentProject();
+            const oldSection = project.sections.find(s => s.id === currentEditingTask.sectionId);
+            const task = oldSection.tasks.find(t => t.id === currentEditingTask.taskId);
+            const newSectionId = document.getElementById('taskDetailSection').value;
+            
+            if (newSectionId !== currentEditingTask.sectionId) {
+                // Remove from old section
+                oldSection.tasks = oldSection.tasks.filter(t => t.id !== currentEditingTask.taskId);
+                
+                // Add to new section
+                const newSection = project.sections.find(s => s.id === newSectionId);
+                newSection.tasks.push(task);
+                
+                // Update current editing reference
+                currentEditingTask.sectionId = newSectionId;
+                
+                saveData();
+                renderTasks();
+                renderSidebar();
+            }
+        }
+
+        function deleteCurrentTask() {
+            if (!currentEditingTask) return;
+            
+            showConfirm('Delete this task?', () => {
+                const project = getCurrentProject();
+                const section = project.sections.find(s => s.id === currentEditingTask.sectionId);
+                section.tasks = section.tasks.filter(t => t.id !== currentEditingTask.taskId);
+                
+                closeTaskDetail();
+                saveData();
+                renderTasks();
+                renderSidebar();
+            });
+        }
+
+        function filterTasks(query) {
+            const taskItems = document.querySelectorAll('.task-item');
+            const searchTerm = query.toLowerCase();
+            
+            taskItems.forEach(item => {
+                const text = item.querySelector('.task-text').textContent.toLowerCase();
+                item.style.display = text.includes(searchTerm) ? 'grid' : 'none';
+            });
+        }
+
+        // Make functions globally accessible
+        window.showAddGroupModal = showAddGroupModal;
+        window.closeGroupModal = closeGroupModal;
+        window.addGroup = addGroup;
+        window.saveGroup = saveGroup;
+        window.editGroup = editGroup;
+        window.deleteGroup = deleteGroup;
+        window.showAddProjectModal = showAddProjectModal;
+        window.closeProjectModal = closeProjectModal;
+        window.addProject = addProject;
+        window.saveProject = saveProject;
+        window.editProject = editProject;
+        window.deleteProject = deleteProject;
+        window.showAddSectionModal = showAddSectionModal;
+        window.closeSectionModal = closeSectionModal;
+        window.addSection = addSection;
+        window.toggleSection = toggleSection;
+        window.showAddTaskModal = showAddTaskModal;
+        window.closeTaskModal = closeTaskModal;
+        window.toggleTask = toggleTask;
+        window.saveInlineTask = saveInlineTask;
+        window.renderTasks = renderTasks;
+        window.openTaskDetail = openTaskDetail;
+        window.closeTaskDetail = closeTaskDetail;
+        window.deleteCurrentTask = deleteCurrentTask;
+    </script>
+</body>
+</html>

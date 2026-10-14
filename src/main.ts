@@ -1,6 +1,7 @@
 // Task Manager: state, rendering and events.
-import 'iconify-icon';
+import { addCollection } from 'iconify-icon';
 import './style.css';
+import lucideIcons from './icons.json';
 import { SHEETS_API_URL, loadSheet, saveSheet, type SheetResponse } from './sheet';
 import {
   editorHtml,
@@ -1906,6 +1907,7 @@ function onDragEnd(): void {
 // ================================================================ boot (kept last: everything it uses is defined above)
 
 function boot(): void {
+  addCollection(lucideIcons); // bundled, so icons work without Iconify's API
   ui.view = lsGet<View | null>(LS.view, null);
   const savedCollapsed = lsGet<Record<string, boolean>>(LS.collapsed, {});
   for (const k of ['projects', 'notes', 'meetings']) if (typeof savedCollapsed[k] === 'boolean') ui.collapsed[k] = savedCollapsed[k];

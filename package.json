@@ -1,0 +1,25 @@
+{
+  "name": "task-manager",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "node tests/code-gs.test.mjs",
+    "icons": "node scripts/gen-icons.mjs"
+  },
+  "dependencies": {
+    "iconify-icon": "^2.1.0"
+  },
+  "optionalDependencies": {
+    "@canva-ct/genai": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10",
+    "@iconify-json/lucide": "^1.2.0"
+  }
+}
